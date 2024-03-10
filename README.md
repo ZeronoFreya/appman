@@ -12,6 +12,15 @@
 
 > 通过计划任务启动的程序，不会提示UAC，且它调用的程序会继承管理员权限
 
+### 为什么需要这个程序
+
+第一个功能: 
+以 `r2modman.exe` 为例 (见最后的`config.json`)，这是一个mod管理器，但无法指定安装目录及关闭更新，它会自动安装在 `%localappdata%\\Programs\\r2modman` 及 下载更新到 `%localappdata%\\r2modman-updater` ，无论你把 `r2modman` 移植到哪里，它都会检测更新并安装在C盘。
+解决办法就是创建软链接
+> 用来修改各种游戏的存档也是个不错的选择
+
+第二个功能就很纯粹了，windows没有提供UAC白名单，不想关UAC也不想要UAC提示
+
 ---
 
 ## 使用方法
@@ -77,20 +86,28 @@ temp_symlink.txt
 
 
 ## config.json
+
 ```json
 {
   // notepad.exe会以管理员权限运行，且不会弹出UAC提示
   "nouac": ["C:\\Windows\\notepad.exe"],
   // 需要映射的路径
   "symlink": {
-    "notepad.exe": [{
-        "dir": "C:\\Windows",
-        "link": [{
-            // 仅支持 %appdata% 与 %localappdata%
-            "dirpath": "原始路径",
-            "symlink": "软链接路径",
-        }]
-    }]
+    "r2modman.exe": [
+      {
+        "dir": "D:\\Game\\r2modman\\App",
+        "link": [
+          {
+            "dirpath": "D:\\Game\\r2modman\\updater",
+            "symlink": "%localappdata%\\r2modman-updater"
+          },
+          {
+            "dirpath": "D:\\Game\\r2modman\\App",
+            "symlink": "%localappdata%\\Programs\\r2modman"
+          }
+        ]
+      }
+    ]
   }
 }
 ```

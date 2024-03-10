@@ -18,6 +18,7 @@
 # vendor/
 
 build/
+release/
 
 # Go workspace file
 go.work
