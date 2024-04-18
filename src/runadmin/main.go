@@ -49,12 +49,17 @@ func main() {
 	}
 	rs := strings.Split(strings.ReplaceAll(string(content), "\r\n", "\n"), "\n")
 	for _, v := range rs {
-		cmd := exec.Command("cmd.exe", "/c", "start "+v)
+		// cmd := exec.Command("cmd.exe", "/c", "start "+v)
+		cmd := exec.Command("cmd.exe")
 		cmd.SysProcAttr = &syscall.SysProcAttr{
+			CmdLine:       `/c chcp 65001 && start "" ` + v,
 			HideWindow:    true,
 			CreationFlags: 0x08000000,
 		}
-		cmd.Start()
+		// cmd.Start()
+		if err := cmd.Run(); err != nil {
+			log.Info(err.Error())
+		}
 	}
 
 	os.Remove(filepath)

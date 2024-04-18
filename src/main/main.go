@@ -110,6 +110,7 @@ func checkSymlink(fileName, parentDir string, cfg *Config) error {
 		if !Exists(tempDir) {
 			err := os.MkdirAll(tempDir, 0700)
 			if err != nil {
+				log.Fatal("无法创建 run_app_temp: " + err.Error())
 				return err
 			}
 		}
@@ -171,7 +172,15 @@ func checkSymlink(fileName, parentDir string, cfg *Config) error {
 }
 
 func runas(exepath, exeargs string) {
-	target := exepath + " " + exeargs
+	tempDir := filepath.Join(os.TempDir(), "run_app_temp")
+	if !Exists(tempDir) {
+		err := os.MkdirAll(tempDir, 0700)
+		if err != nil {
+			log.Fatal("无法创建 run_app_temp: " + err.Error())
+			return
+		}
+	}
+	target := `"` + exepath + `" ` + exeargs
 	content := []byte(target)
 	err := os.WriteFile(filepath.Join(os.TempDir(), "run_app_temp", "temp_app_runas_admin.txt"), content, 0644)
 	if err != nil {
@@ -274,9 +283,35 @@ func main() {
 		SetConfig(&cfg)
 		return
 	}
+	cmdLine := `start "" "` + exepath + `"`
+	// cmdLine := `start /D "` + filepath.Dir(exepath) + `" "` + filepath.Base(exepath) + `"`
+	if len(exeargs) > 0 {
+		cmdLine += strings.Join(exeargs, " ")
+	}
+	// log.Info(cmdLine)
+	cmd := exec.Command("cmd.exe")
+	// cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: "/c chcp 65001 && " + cmdLine}
+	// cmd := exec.Command("cmd.exe", "/c", cmdLine)
+	// var out bytes.Buffer
+	// var stderr bytes.Buffer
+	// cmd.Stdout = &out
+	// cmd.Stderr = &stderr
 
-	cmd := exec.Command(exepath, exeargs...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		CmdLine:       "/c chcp 65001 && " + cmdLine,
+		HideWindow:    true,
+		CreationFlags: 0x08000000,
+	}
+
+	// log.Info(out.String())
+	// log.Info(stderr.String())
 	if err := cmd.Run(); err != nil {
+		log.Info("无法用当前账户运行 " + exepath + ", 尝试管理员运行")
 		runas(exepath, strings.Join(exeargs, " "))
 	}
+
+	// cmd := exec.Command(exepath, exeargs...)
+	// if err := cmd.Run(); err != nil {
+	// 	runas(exepath, strings.Join(exeargs, " "))
+	// }
 }
